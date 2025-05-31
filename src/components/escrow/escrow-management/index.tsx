@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Shield,
   Search,
   Plus,
   Eye,
@@ -21,7 +20,6 @@ import {
   Wallet,
   Activity,
   AlertCircle,
-  RefreshCw,
   Edit3,
   TrendingUp,
 } from "lucide-react";
@@ -35,6 +33,7 @@ import {
 } from "@/types/escrow-contract";
 import StatGird from "./stat-grid";
 import { formatAddress } from "@/utils/lib/format-address";
+import EscrowManagementHeader from "./header";
 
 // API base URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -473,64 +472,19 @@ export default function EscrowDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Shield className="w-8 h-8 text-blue-600" />
-                <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">
-                    Contract Dashboard
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Manage your documents and escrow contracts
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={loadContracts}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
-                </button>
-                <button
-                  onClick={handleCreateEscrow}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Contract
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gray-100 w-full">
+      <div className="w-full flex">
+        <EscrowManagementHeader
+          loadContracts={loadContracts}
+          handleCreateEscrow={handleCreateEscrow}
+        />
+
+        <StatGird stats={stats} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-500" />
-              <p className="text-green-700">{successMessage}</p>
-              <button
-                onClick={() => setSuccessMessage(null)}
-                className="ml-auto text-green-500 hover:text-green-700"
-              >
-                <XCircle className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Success Message */} {/* TODO: add this back later */}
         {/* Stats Grid */}
-        <StatGird stats={stats} />
-
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -549,7 +503,6 @@ export default function EscrowDashboard() {
             </div>
           </div>
         )}
-
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
@@ -611,7 +564,6 @@ export default function EscrowDashboard() {
             </div>
           </div>
         </div>
-
         {/* Contracts List */}
         <div className="space-y-6">
           {isLoading ? (

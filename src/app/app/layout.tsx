@@ -1,4 +1,3 @@
-import Header from "@/components/header";
 import { Metadata } from "next";
 import MinorLayerProvider from "./minor-layer-provider";
 import LeftSidebar from "@/components/sidebar/left-sidebar";
@@ -19,8 +18,7 @@ export default function RootLayout({
       <MinorLayerProvider>
         <div className="w-full flex items-start h-screen overflow-y-hidden">
           <LeftSidebar />
-          <div className="w-full h-screen overflow-y-auto">
-            <Header />
+          <div className="w-full h-screen overflow-y-auto py-10">
             {children}
           </div>
           <RightSideBar />

@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          <div className="w-full relative">{children}</div>
+          <div className="w-full relative bg-gray-100">{children}</div>
         </Providers>
       </body>
     </html>

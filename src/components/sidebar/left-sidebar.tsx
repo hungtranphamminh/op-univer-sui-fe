@@ -35,7 +35,7 @@ export default function LeftSidebar() {
   ];
 
   return (
-    <div className="h-full bg-gray-50 px-6 py-10">
+    <div className="h-full bg-gray-100 px-6 py-20">
       {pages.map((page) => (
         <button
           key={page.name}

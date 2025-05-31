@@ -1,3 +1,4 @@
+import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { PenTool, Check, Image, X } from "lucide-react";
 
 export default function OwnSignature({
@@ -5,26 +6,57 @@ export default function OwnSignature({
   signatureMessage,
   signedMessage,
   isSigningMessage,
-  handleSignMessage,
-  currentAccount,
+  // handleSignMessage,
   signatureImage,
   signatureImageUrl,
   handleSignatureImageChange,
+  setIsSigningMessage,
+  setSignedMessage,
+  setError,
   handleRemoveSignatureImage,
   signatureInputRef,
 }: {
   addOwnSignature: boolean;
-  signatureMessage?: string;
-  signedMessage?: string;
+  signatureMessage: string | null;
+  signedMessage: string | null;
   isSigningMessage: boolean;
-  handleSignMessage: () => void;
-  currentAccount?: string;
-  signatureImage?: File | null;
-  signatureImageUrl?: string | null;
+  setIsSigningMessage: (isSigning: boolean) => void;
+  setSignedMessage: (signature: string | null) => void;
+  setError: (error: string | null) => void;
+  signatureImage: File | null;
+  signatureImageUrl: string | null;
   handleSignatureImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleRemoveSignatureImage: () => void;
   signatureInputRef: any;
 }) {
+  console.log(signedMessage, "   adadda   ", signatureImage);
+
+  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
+
+  // Sign the message with wallet
+  const handleSignMessage = async () => {
+    if (!signatureMessage || !currentAccount) return;
+
+    setIsSigningMessage(true);
+    try {
+      const signature = await signPersonalMessage({
+        message: new TextEncoder().encode(signatureMessage),
+      });
+
+      setSignedMessage(signature.signature);
+
+      console.log("Signed message:", signature.signature);
+
+      setError(null);
+    } catch (err) {
+      console.error("Failed to sign message:", err);
+      setError("Failed to sign message. Please try again.");
+    } finally {
+      setIsSigningMessage(false);
+    }
+  };
+  const currentAccount = useCurrentAccount();
+
   return (
     <>
       {addOwnSignature && signatureMessage && (

@@ -10,7 +10,7 @@ export default function Sidebar({
   signedMessage,
   signatureImage,
   signers,
-  handlePublish,
+  handleRequestPublish,
 }: {
   selectedFile: File | null;
   documentTitle: string;
@@ -18,10 +18,10 @@ export default function Sidebar({
   documentDescription: string;
   setDocumentDescription: (description: string) => void;
   addOwnSignature: boolean;
-  signedMessage?: string;
-  signatureImage?: File | null;
+  signedMessage: string | null;
+  signatureImage: File | null;
   signers: { address: string; name?: string }[];
-  handlePublish: () => void;
+  handleRequestPublish: () => void;
 }) {
   return (
     <>
@@ -102,7 +102,7 @@ export default function Sidebar({
 
             <div className="mt-6">
               <button
-                onClick={handlePublish}
+                onClick={handleRequestPublish}
                 disabled={
                   !selectedFile ||
                   !documentTitle.trim() ||
@@ -115,7 +115,7 @@ export default function Sidebar({
               </button>
 
               <p className="text-xs text-gray-500 text-center mt-2">
-                Publishing will require a blockchain transaction
+                Create a request to publish this document on the blockchain.
               </p>
             </div>
           </div>

@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState, useCallback, useRef } from "react";
-import { useSignPersonalMessage, useCurrentAccount } from "@mysten/dapp-kit";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 import PdfUpload from "./pdf-upload";
 import OwnSignature from "./own-signature";
 import OtherSigners from "./other-signers";
 import Sidebar from "./side-bar";
+import Overlay from "./overlay";
 
 interface Signer {
   id: string;
@@ -16,6 +18,8 @@ interface Signer {
 }
 
 const PublishRequestPage: React.FC = () => {
+  const router = useRouter();
+
   // PDF Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -34,7 +38,6 @@ const PublishRequestPage: React.FC = () => {
 
   // Sui Wallet Integration
   const currentAccount = useCurrentAccount();
-  const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
 
   // Own Signature State
   const [documentId, setDocumentId] = useState<string | null>(null);
@@ -45,6 +48,11 @@ const PublishRequestPage: React.FC = () => {
   const [signatureImageUrl, setSignatureImageUrl] = useState<string | null>(
     null
   );
+
+  const [requestStatus, setRequestStatus] = useState<
+    "none" | "loading" | "fail" | "success"
+  >("none");
+
   const signatureInputRef = useRef<HTMLInputElement>(null);
 
   // Document Info State
@@ -63,14 +71,71 @@ const PublishRequestPage: React.FC = () => {
     return null;
   };
 
+  const validateFileAndShowError = (file: File): boolean => {
+    const validationError = validateFile(file);
+    if (validationError) {
+      setError(validationError);
+      return false;
+    }
+    setError(null);
+    return true;
+  };
+
+  const validateSigner = (
+    address: string,
+    name?: string,
+    email?: string
+  ): string | null => {
+    // Validate wallet address format (basic Sui address validation)
+    if (!address || address.trim().length === 0) {
+      return "Wallet address is required";
+    }
+
+    const trimmedAddress = address.trim();
+
+    // Check if it looks like a valid Sui address (starts with 0x and has the right length)
+    if (!trimmedAddress.startsWith("0x")) {
+      return "Wallet address must start with '0x'";
+    }
+
+    if (trimmedAddress.length < 40 || trimmedAddress.length > 66) {
+      return "Invalid wallet address length";
+    }
+
+    // Check for duplicate addresses
+    const existingSigner = signers.find(
+      (signer) => signer.address.toLowerCase() === trimmedAddress.toLowerCase()
+    );
+
+    if (existingSigner) {
+      return "This wallet address is already added";
+    }
+
+    // Check if it's the same as publisher address
+    if (
+      currentAccount &&
+      trimmedAddress.toLowerCase() === currentAccount.address.toLowerCase()
+    ) {
+      return "Cannot add your own wallet address as a signer";
+    }
+
+    // Validate email if provided
+    if (email && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return "Please enter a valid email address";
+      }
+    }
+
+    return null; // No errors
+  };
+
   const handleFileSelect = useCallback(
     (file: File) => {
       setError(null);
       setIsLoading(true);
 
-      const validationError = validateFile(file);
-      if (validationError) {
-        setError(validationError);
+      if (!validateFileAndShowError(file)) {
         setIsLoading(false);
         return;
       }
@@ -88,37 +153,22 @@ const PublishRequestPage: React.FC = () => {
         const newDocumentId = uuidv4();
         setDocumentId(newDocumentId);
 
+        console.log("📄 PDF file selected:", {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          documentId: newDocumentId,
+        });
+
         setIsLoading(false);
       } catch (err) {
+        console.error("Error loading PDF:", err);
         setError("Failed to load PDF file.");
         setIsLoading(false);
       }
     },
     [pdfUrl]
   );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-
-      const files = Array.from(e.dataTransfer.files);
-      if (files.length > 0) {
-        handleFileSelect(files[0]);
-      }
-    },
-    [handleFileSelect]
-  );
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
 
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,7 +207,21 @@ const PublishRequestPage: React.FC = () => {
   }, [pdfUrl, signatureImageUrl]);
 
   const addSigner = () => {
-    if (!newSignerAddress.trim()) return;
+    if (!newSignerAddress.trim()) {
+      setError("Please enter a wallet address");
+      return;
+    }
+
+    // Validate the signer data
+    const validationError = validateSigner(
+      newSignerAddress,
+      newSignerName,
+      newSignerEmail
+    );
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     const newSigner: Signer = {
       id: Date.now().toString(),
@@ -170,10 +234,19 @@ const PublishRequestPage: React.FC = () => {
     setNewSignerAddress("");
     setNewSignerName("");
     setNewSignerEmail("");
+    setError(null); // Clear any errors
+
+    console.log("➕ Added new signer:", newSigner);
   };
 
   const removeSigner = (id: string) => {
+    const signerToRemove = signers.find((s) => s.id === id);
     setSigners(signers.filter((signer) => signer.id !== id));
+    setError(null); // Clear any errors
+
+    if (signerToRemove) {
+      console.log("➖ Removed signer:", signerToRemove.address);
+    }
   };
 
   // Handle own signature checkbox
@@ -192,26 +265,6 @@ const PublishRequestPage: React.FC = () => {
       }
       setSignatureImage(null);
       setSignatureImageUrl(null);
-    }
-  };
-
-  // Sign the message with wallet
-  const handleSignMessage = async () => {
-    if (!signatureMessage || !currentAccount) return;
-
-    setIsSigningMessage(true);
-    try {
-      const signature = await signPersonalMessage({
-        message: new TextEncoder().encode(signatureMessage),
-      });
-
-      setSignedMessage(signature.signature);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to sign message:", err);
-      setError("Failed to sign message. Please try again.");
-    } finally {
-      setIsSigningMessage(false);
     }
   };
 
@@ -260,9 +313,29 @@ const PublishRequestPage: React.FC = () => {
     }
   };
 
-  const handlePublish = async () => {
+  // Fixed handleRequestPublish function for your PublishRequestPage
+
+  const handleRequestPublish = async () => {
+    setRequestStatus("loading");
+    setError(null); // Clear any previous errors
+
+    // Validation checks
     if (!selectedFile || !documentTitle.trim() || !documentId) {
       setError("Please provide a document and title before publishing.");
+      setRequestStatus("fail");
+      return;
+    }
+
+    if (!currentAccount) {
+      setError("Please connect your wallet first.");
+      setRequestStatus("fail");
+      return;
+    }
+
+    // Check if at least one signature option is selected
+    if (!addOwnSignature && signers.length === 0) {
+      setError("Please add your signature or other signers before publishing.");
+      setRequestStatus("fail");
       return;
     }
 
@@ -270,84 +343,113 @@ const PublishRequestPage: React.FC = () => {
       setError(
         "Please complete your signature (sign message and upload signature image) before publishing."
       );
+      setRequestStatus("fail");
       return;
     }
 
     try {
-      if (!currentAccount) throw new Error("No wallet connected");
+      console.log("🚀 Starting document upload...");
 
       // Create FormData
       const formData = new FormData();
 
       // Add the PDF file
       formData.append("files", selectedFile);
+      console.log("📎 Added PDF file:", selectedFile.name);
 
       // Add signature image if publisher is signing
       if (addOwnSignature && signatureImage) {
-        formData.append("files", signatureImage, "signatureImage");
+        formData.append("signatureImage", signatureImage);
+        console.log("🖼️ Added signature image:", signatureImage.name);
       }
 
-      // Add document data
+      // Add document data - each field individually
       formData.append("documentId", documentId);
-      formData.append("title", documentTitle);
+      formData.append("title", documentTitle.trim());
       formData.append("publisherAddress", currentAccount.address);
 
-      if (documentDescription) {
-        formData.append("description", documentDescription);
+      if (documentDescription && documentDescription.trim()) {
+        formData.append("description", documentDescription.trim());
       }
 
       if (addOwnSignature && signedMessage) {
         formData.append("publisherSignature", signedMessage);
       }
 
-      // Add signers as JSON string
+      // Add signers as a properly formatted JSON string
       if (signers.length > 0) {
-        formData.append(
-          "signers",
-          JSON.stringify(
-            signers.map((signer) => ({
-              address: signer.address,
-              name: signer.name,
-              email: signer.email,
-            }))
-          )
-        );
+        const signersData = signers.map((signer) => ({
+          address: signer.address.trim(),
+          name: signer.name?.trim() || undefined,
+          email: signer.email?.trim() || undefined,
+        }));
+
+        console.log("👥 Adding signers:", signersData);
+        formData.append("signers", JSON.stringify(signersData));
+      }
+
+      // Log FormData contents for debugging
+      console.log("📋 FormData contents:");
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(
+            `  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`
+          );
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
       }
 
       // Make the API call
+      console.log("🌐 Making API request...");
       const response = await fetch("http://localhost:3001/documents/upload", {
         method: "POST",
         body: formData,
+        // Don't set Content-Type header - let browser set it with boundary for FormData
       });
 
+      console.log("📡 Response status:", response.status);
+
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({
+          message: `HTTP error! status: ${response.status}`,
+        }));
+        console.error("❌ API Error:", errorData);
         throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
+          errorData.message || `Server error: ${response.status}`
         );
       }
 
       const result = await response.json();
-      console.log("Document uploaded successfully:", result);
+      console.log("✅ Document uploaded successfully:", result);
 
       // Show success message
-      alert("Document uploaded successfully to database!");
+      setRequestStatus("success");
 
-      // Here you can add any success handling like:
-      // - Reset the form
-      // - Redirect to another page
-      // - Show the document status
-      // - etc.
+      // Navigate to the approval page
+      setTimeout(() => {
+        router.push(`/app/approved-publish?documentId=${documentId}`);
+      }, 2000); // Give user time to see success message
     } catch (error) {
-      console.error("Failed to upload document:", error);
-      setError("Failed to upload document. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("❌ Failed to upload document:", error);
+
+      // Set user-friendly error message
+      if (error instanceof Error) {
+        setError(`Upload failed: ${error.message}`);
+      } else {
+        setError(
+          "Failed to upload document. Please check your connection and try again."
+        );
+      }
+
+      setRequestStatus("fail");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Request loading overlay */}
+      <Overlay requestStatus={requestStatus} />
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -425,10 +527,13 @@ const PublishRequestPage: React.FC = () => {
                   {/* Own Signature Section */}
                   <OwnSignature
                     addOwnSignature={addOwnSignature}
-                    signatureMessage={signatureMessage ?? undefined}
-                    signedMessage={signedMessage ?? undefined}
+                    signatureMessage={signatureMessage}
+                    signedMessage={signedMessage}
                     isSigningMessage={isSigningMessage}
-                    handleSignMessage={handleSignMessage}
+                    // handleSignMessage={handleSignMessage}
+                    setIsSigningMessage={setIsSigningMessage}
+                    setSignedMessage={setSignedMessage}
+                    setError={setError}
                     signatureImage={signatureImage}
                     signatureImageUrl={signatureImageUrl}
                     handleSignatureImageChange={handleSignatureImageChange}
@@ -481,8 +586,10 @@ const PublishRequestPage: React.FC = () => {
             documentTitle={documentTitle}
             setDocumentTitle={setDocumentTitle}
             documentDescription={documentDescription}
+            signedMessage={signedMessage}
+            signatureImage={signatureImage}
             setDocumentDescription={setDocumentDescription}
-            handlePublish={handlePublish}
+            handleRequestPublish={handleRequestPublish}
             selectedFile={selectedFile}
             addOwnSignature={addOwnSignature}
             signers={signers}

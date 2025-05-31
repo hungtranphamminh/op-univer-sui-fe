@@ -832,6 +832,7 @@ export default function EscrowDashboard() {
                     contract.joinRequestCount > 0 &&
                     !contract.partyB && (
                       <button
+                        disabled={contract.userRole !== "client"}
                         onClick={() => {
                           setSelectedContract(contract);
                           setShowJoinRequests(true);
@@ -845,6 +846,10 @@ export default function EscrowDashboard() {
                     )}
 
                   <button
+                    disabled={
+                      contract.userRole !== "client" &&
+                      contract.userRole !== "provider"
+                    }
                     onClick={() => {
                       router.push(
                         `/app/escrow/workspace/${contract.documentId}`

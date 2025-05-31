@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Upload,
-  Download,
   CheckCircle,
   XCircle,
   AlertTriangle,
@@ -9,18 +8,15 @@ import {
   Loader,
   DollarSign,
   Clock,
-  User,
   MessageSquare,
   ExternalLink,
   Eye,
-  Calendar,
   Package,
   Send,
   ThumbsUp,
   ThumbsDown,
   RefreshCw,
   Shield,
-  Activity,
   Wallet,
 } from "lucide-react";
 import {
@@ -28,59 +24,16 @@ import {
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import {
+  EscrowWorkspaceProps,
+  EscrowWorkspaceType,
+  WorkReview,
+  WorkSubmission,
+} from "@/types/workspace";
+import { formatAddress } from "@/utils/lib/format-address";
 
 // API Configuration
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
-// Types
-interface EscrowWorkspace {
-  documentId: string;
-  title: string;
-  description: string;
-  agreedAmount: number;
-  partyA: string; // Client
-  partyB: string; // Provider
-  escrowStatus:
-    | "signed"
-    | "funded"
-    | "work_submitted"
-    | "work_confirmed"
-    | "completed";
-  escrowContractId?: string;
-  deadline?: string;
-  requirements?: string;
-
-  // Work details
-  workDescription?: string;
-  workDeliveryNotes?: string;
-  workSubmissionDate?: string;
-  workConfirmationDate?: string;
-  paymentReleaseDate?: string;
-
-  // Transaction hashes
-  fundingTxHash?: string;
-  workSubmissionTxHash?: string;
-  workConfirmationTxHash?: string;
-  paymentReleaseTxHash?: string;
-  blockchainTxHash?: string;
-  suiObjectId?: string;
-}
-
-interface WorkSubmission {
-  description: string;
-  deliveryNotes: string;
-  attachmentUrls: string[];
-  completionNotes: string;
-}
-
-interface WorkReview {
-  feedback: string;
-  requestedChanges?: string;
-}
-
-interface EscrowWorkspaceProps {
-  documentId: string;
-}
 
 export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
   const currentAccount = useCurrentAccount();
@@ -88,7 +41,7 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
     useSignAndExecuteTransaction();
 
   // State
-  const [escrow, setEscrow] = useState<EscrowWorkspace | null>(null);
+  const [escrow, setEscrow] = useState<EscrowWorkspaceType | null>(null);
   const [userRole, setUserRole] = useState<"client" | "provider" | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -398,10 +351,6 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
       ...prev,
       attachmentUrls: prev.attachmentUrls.filter((_, i) => i !== index),
     }));
-  };
-
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
   const getProgressPercentage = () => {

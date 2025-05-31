@@ -1,6 +1,8 @@
 import Header from "@/components/header";
 import { Metadata } from "next";
 import MinorLayerProvider from "./minor-layer-provider";
+import LeftSidebar from "@/components/sidebar/left-sidebar";
+import RightSideBar from "@/components/sidebar/right-sidebar";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,10 +15,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <main className="w-full relative">
+    <main className="w-full relative ">
       <MinorLayerProvider>
-        <Header />
-        {children}
+        <div className="w-full flex items-start h-screen overflow-y-hidden">
+          <LeftSidebar />
+          <div className="w-full h-screen overflow-y-auto">
+            <Header />
+            {children}
+          </div>
+          <RightSideBar />
+        </div>
       </MinorLayerProvider>
     </main>
   );

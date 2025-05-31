@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import homeIcon from "@images/shared/home.svg";
 import escrowIcon from "@images/shared/dashboard.svg";
 import verifyIcon from "@images/shared/verify.svg";
 import setttingIcon from "@images/shared/setting.svg";
-import { usePathname } from "next/navigation";
 
 export default function LeftSidebar() {
+  const router = useRouter();
   const pathname = usePathname();
 
   const pages = [
@@ -37,13 +37,13 @@ export default function LeftSidebar() {
   return (
     <div className="h-full bg-gray-50 px-6 py-10">
       {pages.map((page) => (
-        <Link
+        <button
           key={page.name}
-          href={page.href}
-          className={`
+          onClick={() => router.push(page.href)}
+          className={` cursor-pointer
             ${pathname === page.href ? "bg-white" : "hover:bg-white"}
             transition-all duration-200 ease-in-out
-            flex items-center mb-4 p-2 rounded-2xl bg-gray-200 shadow-md`}
+            flex items-center mb-4 p-2 rounded-2xl bg-gray-100 shadow-md`}
           title={page.name}
           aria-label={page.name}
         >
@@ -54,7 +54,7 @@ export default function LeftSidebar() {
             height={60}
             className="mr-2"
           />
-        </Link>
+        </button>
       ))}
     </div>
   );

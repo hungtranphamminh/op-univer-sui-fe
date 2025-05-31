@@ -412,32 +412,6 @@ export default function EscrowDashboard() {
     }
   };
 
-  // Calculate progress percentage
-  const getProgressPercentage = (contract: EscrowContract) => {
-    // For standard documents
-    if (contract.documentType === "standard") {
-      if (contract.status === "published") return 100;
-      if (contract.status === "ready_for_blockchain") return 90;
-      if (contract.status === "awaiting_signatures") {
-        const signed = contract.signedCount || 0;
-        const total = contract.totalSigners || 1;
-        return Math.max(20, (signed / total) * 80);
-      }
-      return 10;
-    }
-
-    // For escrow contracts
-    if (contract.escrowStatus === "completed") return 100;
-    if (contract.paymentConfirmed) return 90;
-    if (contract.workConfirmed) return 80;
-    if (contract.workSubmitted) return 70;
-    if (contract.escrowStatus === "funded") return 50;
-    if (contract.partyBSigned && contract.partyASigned) return 40;
-    if (contract.partyB) return 30;
-    if (contract.partyASigned) return 20;
-    return 10;
-  };
-
   // Get appropriate icon for contract activity
   const getActivityIcon = (iconName: string) => {
     const iconMap: { [key: string]: React.ReactNode } = {
@@ -472,8 +446,8 @@ export default function EscrowDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 w-full">
-      <div className="w-full flex">
+    <div className="min-h-screen bg-gray-100 w-full px-4 sm:px-6 lg:px-8 ">
+      <div className="flex items-center gap-6">
         <EscrowManagementHeader
           loadContracts={loadContracts}
           handleCreateEscrow={handleCreateEscrow}
@@ -482,9 +456,9 @@ export default function EscrowDashboard() {
         <StatGird stats={stats} />
       </div>
 
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main content */}
+      <div className="w-full">
         {/* Success Message */} {/* TODO: add this back later */}
-        {/* Stats Grid */}
         {/* Error Display */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -504,7 +478,7 @@ export default function EscrowDashboard() {
           </div>
         )}
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
             {/* Tabs */}
             <div className="flex space-x-1">
@@ -565,13 +539,15 @@ export default function EscrowDashboard() {
           </div>
         </div>
         {/* Contracts List */}
-        <div className="space-y-6">
-          {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {isLoading && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
               <p className="mt-4 text-gray-600">Loading contracts...</p>
             </div>
-          ) : filteredContracts.length === 0 ? (
+          )}
+
+          {!isLoading && filteredContracts.length === 0 && (
             <div className="text-center py-12">
               <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -590,30 +566,44 @@ export default function EscrowDashboard() {
                 Create New Contract
               </button>
             </div>
-          ) : (
+          )}
+
+          {!isLoading &&
+            filteredContracts.length !== 0 &&
             filteredContracts.map((contract) => (
               <div
                 key={contract.documentId}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
+                className="bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md hover:border-gray-200 transition-all duration-200 p-4 group w-full max-w-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <div className="flex items-center space-x-2">
-                        {contract.documentType === "open_escrow" ? (
-                          <Globe className="w-5 h-5 text-blue-600" />
-                        ) : contract.documentType === "escrow_contract" ? (
-                          <Lock className="w-5 h-5 text-green-600" />
-                        ) : (
-                          <FileText className="w-5 h-5 text-gray-600" />
-                        )}
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {contract.title}
-                        </h3>
-                      </div>
+                    {/* Header */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900 tracking-tight truncate">
+                        {contract.title}
+                      </h3>
+                    </div>
+
+                    {/* Status and Role Badges */}
+                    <div className="flex items-center gap-2 mb-3">
+                      {/* Document Type Badge */}
+                      <span
+                        className={`px-1.5 py-1 text-xs font-medium rounded-md border ${
+                          contract.documentType === "open_escrow"
+                            ? "bg-blue-50 text-blue-700 border-blue-200"
+                            : contract.documentType === "escrow_contract"
+                            ? "bg-purple-50 text-purple-700 border-purple-200"
+                            : "bg-gray-50 text-gray-700 border-gray-200"
+                        }`}
+                      >
+                        {contract.documentType === "open_escrow" && "Open"}
+                        {contract.documentType === "escrow_contract" &&
+                          "Closed"}
+                        {contract.documentType === "standard" && "Standard"}
+                      </span>
 
                       <span
-                        className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                        className={`px-1.5 py-1 text-xs font-medium rounded-md ${getStatusColor(
                           contract.escrowStatus || contract.status
                         )}`}
                       >
@@ -623,136 +613,129 @@ export default function EscrowDashboard() {
                         )}
                       </span>
 
-                      {/* User role badge */}
                       {contract.userRole && (
-                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                        <span className="px-1.5 py-1 text-xs font-medium bg-indigo-50 text-indigo-700 rounded-md border border-indigo-200">
                           {contract.userRole === "client"
-                            ? "👤 Client"
+                            ? "Client"
                             : contract.userRole === "provider"
-                            ? "🔧 Provider"
-                            : "✍️ Signer"}
+                            ? "Provider"
+                            : "Signer"}
                         </span>
                       )}
                     </div>
 
+                    {/* Description */}
                     {contract.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                      <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed py-2 border-t border-b border-gray-200">
+                        <span className="font-semibold underline mr-1">
+                          About:
+                        </span>
                         {contract.description}
                       </p>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      {/* Amount */}
+                    {/* Key Metrics Grid */}
+                    <div className="grid grid-cols-3 gap-3 mb-3">
                       {contract.agreedAmount && (
                         <div>
-                          <p className="text-xs font-medium text-gray-500">
-                            Amount
-                          </p>
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-xs font-semibold mb-0.5">Reward</p>
+                          <p className="text-sm font-semibold text-emerald-700">
                             {contract.agreedAmount} SUI
                           </p>
                         </div>
                       )}
 
-                      {/* Partner/Provider Status */}
                       <div>
-                        <p className="text-xs font-medium text-gray-500">
+                        <p className="text-xs font-semibold mb-0.5">
                           {contract.documentType === "open_escrow"
-                            ? "Partner Status"
+                            ? "Partner"
                             : contract.documentType === "escrow_contract"
-                            ? "Service Provider"
+                            ? "Provider"
                             : "Signers"}
                         </p>
                         {contract.documentType === "open_escrow" ? (
-                          <div className="flex items-center space-x-1">
+                          <div className="flex items-center gap-1">
                             {contract.partyB ? (
-                              <span className="text-sm text-green-600">
-                                ✓ Partner Found
+                              <span className="text-xs font-medium text-emerald-600">
+                                ✓ Found
                               </span>
                             ) : (
-                              <span className="text-sm text-amber-600">
-                                ⏳ Seeking Partner
+                              <span className="text-xs font-medium text-amber-600">
+                                ⏳ Seeking
                               </span>
                             )}
                             {contract.joinRequestCount &&
                               contract.joinRequestCount > 0 && (
-                                <span className="text-xs text-blue-600">
-                                  ({contract.joinRequestCount} requests)
+                                <span className="text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded">
+                                  {contract.joinRequestCount}
                                 </span>
                               )}
                           </div>
                         ) : contract.documentType === "escrow_contract" ? (
-                          <p className="text-sm font-mono text-gray-900">
+                          <p className="text-xs font-mono text-gray-700 truncate">
                             {contract.partyB
                               ? formatAddress(contract.partyB)
-                              : "Not assigned"}
+                              : "Unassigned"}
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-900">
+                          <p className="text-xs font-medium text-gray-700">
                             {contract.signedCount || 0}/
-                            {contract.totalSigners || 0} signed
+                            {contract.totalSigners || 0}
                           </p>
                         )}
                       </div>
 
-                      {/* Progress */}
                       <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          Progress
-                        </p>
-                        <div className="flex items-center space-x-2">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                              style={{
-                                width: `${getProgressPercentage(contract)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-600">
-                            {getProgressPercentage(contract)}%
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Created Date */}
-                      <div>
-                        <p className="text-xs font-medium text-gray-500">
-                          Created
-                        </p>
-                        <p className="text-sm text-gray-900">
-                          {new Date(contract.createdAt).toLocaleDateString()}
+                        <p className="text-xs font-semibold mb-0.5">Created</p>
+                        <p className="text-xs font-medium text-gray-700">
+                          {new Date(contract.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            }
+                          )}
                         </p>
                       </div>
                     </div>
 
                     {/* Tags */}
-                    {contract.tags && contract.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-4">
-                        {contract.tags.slice(0, 3).map((tag, index) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {contract.tags.length > 3 && (
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-500 rounded">
-                            +{contract.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
+
+                    <div className="flex items-start">
+                      {contract.tags && contract.tags.length > 0 && (
+                        <>
+                          <div className="font-semibold underline mr-1 text-xs">
+                            Tags:
+                          </div>
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {contract.tags.slice(0, 2).map((tag, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-700 rounded border border-gray-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {contract.tags.length > 2 && (
+                              <span className="px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-500 rounded border border-gray-200">
+                                +{contract.tags.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
 
                     {/* Deadline Warning */}
                     {contract.deadline &&
                       new Date(contract.deadline) < new Date() && (
-                        <div className="p-2 bg-red-50 border border-red-200 rounded-lg mb-4">
-                          <div className="flex items-center space-x-2">
-                            <AlertCircle className="w-4 h-4 text-red-500" />
-                            <p className="text-sm text-red-700">
-                              Deadline passed:{" "}
+                        <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded mb-3">
+                          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium text-red-800">
+                              Deadline Passed
+                            </p>
+                            <p className="text-xs text-red-600">
                               {new Date(contract.deadline).toLocaleDateString()}
                             </p>
                           </div>
@@ -763,34 +746,32 @@ export default function EscrowDashboard() {
                     {contract.documentType === "open_escrow" &&
                       contract.shareUrl &&
                       !contract.partyB && (
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                        <div className="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded mb-3">
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-blue-900">
-                                Share to find partners
+                              <p className="text-xs font-semibold text-blue-900 mb-1">
+                                Find Partners
                               </p>
                               <p className="text-xs text-blue-700">
-                                Share this link to attract service providers
+                                Share link to attract providers
                               </p>
                             </div>
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center gap-1">
                               <button
                                 onClick={() =>
-                                  copyShareLink(contract.shareUrl!)
+                                  copyShareLink(contract.shareUrl ?? "")
                                 }
-                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                               >
-                                <Copy className="w-3 h-3 mr-1" />
-                                Copy Link
+                                <Copy className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={() =>
                                   window.open(contract.shareUrl, "_blank")
                                 }
-                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200"
+                                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded hover:bg-blue-200 transition-colors"
                               >
-                                <ExternalLink className="w-3 h-3 mr-1" />
-                                View Public
+                                <ExternalLink className="w-3 h-3" />
                               </button>
                             </div>
                           </div>
@@ -806,81 +787,90 @@ export default function EscrowDashboard() {
                         "work_confirmed",
                         "completed",
                       ].includes(contract.escrowStatus) && (
-                        <div className="p-3 bg-green-50 border border-green-200 rounded-lg mb-4">
-                          <p className="text-sm font-medium text-green-900 mb-2">
-                            Work Progress
-                          </p>
-                          <div className="space-y-1 text-xs text-green-700">
-                            {contract.escrowStatus === "funded" &&
-                              "💰 Escrow funded - work can begin"}
-                            {contract.workSubmitted &&
-                              "📤 Work submitted for review"}
-                            {contract.workConfirmed &&
-                              "✅ Work confirmed by client"}
-                            {contract.paymentConfirmed && "💸 Payment released"}
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded mb-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-semibold text-emerald-900 mb-1">
+                                Work Progress
+                              </p>
+                              <div className="text-xs text-emerald-700">
+                                {contract.escrowStatus === "funded" &&
+                                  "💰 Can begin"}
+                                {contract.workSubmitted && "📤 Submitted"}
+                                {contract.workConfirmed && "✅ Confirmed"}
+                                {contract.paymentConfirmed && "💸 Paid"}
+                              </div>
+                            </div>
+                            {contract.workSubmissionDate && (
+                              <p className="text-xs text-emerald-600 font-medium">
+                                {new Date(
+                                  contract.workSubmissionDate
+                                ).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </p>
+                            )}
                           </div>
-                          {contract.workSubmissionDate && (
-                            <p className="text-xs text-green-600 mt-1">
-                              Last updated:{" "}
-                              {new Date(
-                                contract.workSubmissionDate
-                              ).toLocaleDateString()}
-                            </p>
-                          )}
                         </div>
                       )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    {/* Open Escrow Specific Actions */}
-                    {contract.documentType === "open_escrow" &&
-                      contract.joinRequestCount &&
-                      contract.joinRequestCount > 0 &&
-                      !contract.partyB && (
-                        <button
-                          onClick={() => {
-                            setSelectedContract(contract);
-                            setShowJoinRequests(true);
-                            loadJoinRequests(contract.documentId);
-                          }}
-                          className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200"
-                        >
-                          <Users className="w-4 h-4 mr-1" />
-                          View Requests ({contract.joinRequestCount})
-                        </button>
-                      )}
-
-                    {/* View Details Button */}
-                    <button
-                      onClick={() => viewContractDetails(contract)}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      View Details
+                  {/* More Actions */}
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                      <MoreVertical className="w-4 h-4" />
                     </button>
-
-                    {/* Activity Button */}
-                    <button
-                      onClick={() => viewContractActivity(contract)}
-                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                    >
-                      <Activity className="w-4 h-4 mr-1" />
-                      Activity
-                    </button>
-
-                    {/* More Actions Dropdown */}
-                    <div className="relative">
-                      <button className="p-2 text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                      {/* You can implement a dropdown menu here for additional actions */}
-                    </div>
                   </div>
                 </div>
+
+                {/* Actions Footer */}
+                <div className="flex items-center gap-1 pt-3 mt-3 border-t border-gray-100">
+                  {/* Open Escrow Specific Actions */}
+                  {contract.documentType === "open_escrow" &&
+                    contract.joinRequestCount &&
+                    contract.joinRequestCount > 0 &&
+                    !contract.partyB && (
+                      <button
+                        onClick={() => {
+                          setSelectedContract(contract);
+                          setShowJoinRequests(true);
+                          loadJoinRequests(contract.documentId);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                      >
+                        <Users className="w-3 h-3" />
+                        Requests ({contract.joinRequestCount})
+                      </button>
+                    )}
+
+                  <button
+                    onClick={() => {
+                      router.push(
+                        `/app/escrow/workspace/${contract.documentId}`
+                      );
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    Workspace
+                  </button>
+
+                  <button
+                    onClick={() => viewContractDetails(contract)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    <Eye className="w-3 h-3" />
+                  </button>
+
+                  <button
+                    onClick={() => viewContractActivity(contract)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+                  >
+                    <Activity className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
-            ))
-          )}
+            ))}
         </div>
       </div>
 

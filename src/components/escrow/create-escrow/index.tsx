@@ -109,7 +109,6 @@ export default function CreateEscrowContract() {
   // Escrow management state
   const [escrowStatus, setEscrowStatus] = useState<EscrowStatus | null>(null);
   const [isCreatingEscrow, setIsCreatingEscrow] = useState(false);
-  const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
   // Wallet integration

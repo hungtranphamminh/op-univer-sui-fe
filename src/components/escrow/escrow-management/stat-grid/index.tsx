@@ -17,8 +17,8 @@ export default function StatGird({
   return (
     <>
       {stats && (
-        <div className="flex flex-wrap">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center grow xl:gap-6 gap-2 flex-wrap justify-center mb-4">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 rounded-lg">
                 <FileText className="w-5 h-5 text-blue-600" />
@@ -34,7 +34,7 @@ export default function StatGird({
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Activity className="w-5 h-5 text-green-600" />
@@ -48,7 +48,7 @@ export default function StatGird({
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-purple-600" />
@@ -62,7 +62,7 @@ export default function StatGird({
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
                 <DollarSign className="w-5 h-5 text-yellow-600" />
@@ -76,7 +76,7 @@ export default function StatGird({
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
             <div className="flex items-center">
               <div className="p-2 bg-indigo-100 rounded-lg">
                 <Globe className="w-5 h-5 text-indigo-600" />
@@ -87,22 +87,6 @@ export default function StatGird({
                 </p>
                 <p className="text-2xl font-semibold text-gray-900">
                   {stats.openEscrows}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <Users className="w-5 h-5 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">
-                  Join Requests
-                </p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {stats.pendingJoinRequests}
                 </p>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import Header from "@/components/header";
 import { Metadata } from "next";
+import MinorLayerProvider from "./minor-layer-provider";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,8 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <main className="w-full relative">
-      <Header />
-      {children}
+      <MinorLayerProvider>
+        <Header />
+        {children}
+      </MinorLayerProvider>
     </main>
   );
 }

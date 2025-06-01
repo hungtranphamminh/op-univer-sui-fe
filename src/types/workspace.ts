@@ -5,8 +5,10 @@ export interface EscrowWorkspaceType {
   agreedAmount: number;
   partyA: string; // Client
   partyB: string; // Provider
+  partyBSignedOnChain: boolean;
   escrowStatus:
   | "signed"
+  | "deployed"
   | "funded"
   | "work_submitted"
   | "work_confirmed"

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { PenTool } from "lucide-react";
 import {
   Upload,
   CheckCircle,
@@ -48,6 +49,8 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // Action states
+  const [isDeployingContract, setIsDeployingContract] = useState(false);
+  const [isSigningBlockchain, setIsSigningBlockchain] = useState(false);
   const [isFundingEscrow, setIsFundingEscrow] = useState(false);
   const [isSubmittingWork, setIsSubmittingWork] = useState(false);
   const [isReviewingWork, setIsReviewingWork] = useState(false);
@@ -119,6 +122,194 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
     }
   };
 
+  const deployEscrowContract = async () => {
+    if (!escrow || !currentAccount || userRole !== "client") return;
+
+    setIsDeployingContract(true);
+    setError(null);
+
+    try {
+      console.log(`🚀 Deploying escrow contract for ${documentId}...`);
+
+      // STEP 1: Get deployment data
+      const response = await fetch(
+        `${API_BASE_URL}/documents/${documentId}/create-escrow-agreement`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to get contract deployment data");
+      }
+
+      const deploymentData = await response.json();
+      console.log("📋 Deployment data:", deploymentData.data);
+
+      // STEP 2: Create blockchain transaction
+      const transaction = new Transaction();
+
+      transaction.moveCall({
+        target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::create_escrow_agreement`,
+        arguments: [
+          transaction.object(
+            process.env.NEXT_PUBLIC_SUI_ESCROW_REGISTRY_OBJECT_ID!
+          ),
+          transaction.pure.string(deploymentData.data.documentId),
+          transaction.pure.string(deploymentData.data.title),
+          transaction.pure.string(deploymentData.data.description || ""),
+          transaction.pure.vector("u8", deploymentData.data.pdfHashBytes),
+          transaction.pure.address(deploymentData.data.partyB),
+          transaction.pure.u64(deploymentData.data.agreedAmount),
+          transaction.object("0x6"),
+        ],
+      });
+
+      const result = await signAndExecuteTransaction({ transaction });
+      console.log("✅ Contract deployment completed:", result);
+      console.log("Transaction digest:", result.digest);
+
+      // STEP 3: Get transaction details from Sui RPC to extract object ID
+      let escrowContractId = null;
+
+      try {
+        // Use fetch to call Sui RPC directly
+        const rpcResponse = await fetch("https://fullnode.devnet.sui.io:443", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "sui_getTransactionBlock",
+            params: [
+              result.digest,
+              {
+                showObjectChanges: true,
+                showEffects: true,
+              },
+            ],
+          }),
+        });
+
+        const rpcData = await rpcResponse.json();
+        console.log("🔍 Transaction details from RPC:", rpcData);
+
+        if (rpcData.result && rpcData.result.objectChanges) {
+          const createdObjects = rpcData.result.objectChanges.filter(
+            (change: any) => change.type === "created"
+          );
+
+          console.log("🔍 Created objects:", createdObjects);
+
+          // Look for EscrowAgreement object
+          const escrowObject = createdObjects.find(
+            (obj: any) =>
+              obj.objectType && obj.objectType.includes("EscrowAgreement")
+          );
+
+          if (escrowObject) {
+            escrowContractId = escrowObject.objectId;
+            console.log("✅ Found EscrowAgreement:", escrowContractId);
+          } else {
+            // Fallback: get the first created object that's not the registry
+            const newObject = createdObjects.find(
+              (obj: any) =>
+                obj.objectId !==
+                process.env.NEXT_PUBLIC_SUI_ESCROW_REGISTRY_OBJECT_ID
+            );
+            if (newObject) {
+              escrowContractId = newObject.objectId;
+              console.log("✅ Using fallback object:", escrowContractId);
+            }
+          }
+        }
+      } catch (rpcError) {
+        console.error("❌ RPC call failed:", rpcError);
+      }
+
+      // STEP 4: If RPC failed, use a simpler approach - just use the digest as ID temporarily
+      if (!escrowContractId) {
+        console.warn(
+          "⚠️ Could not extract object ID, using transaction digest as temporary ID"
+        );
+        escrowContractId = result.digest; // Temporary fallback
+      }
+
+      console.log("🆔 Final escrow contract ID:", escrowContractId);
+
+      // STEP 5: Confirm deployment with backend
+      await fetch(
+        `${API_BASE_URL}/documents/${documentId}/confirm-escrow-creation`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionDigest: result.digest,
+            escrowContractId: escrowContractId,
+          }),
+        }
+      );
+
+      setSuccessMessage(
+        "Escrow contract deployed successfully! You can now fund it."
+      );
+      await loadEscrowData();
+    } catch (error: any) {
+      console.error("❌ Failed to deploy escrow contract:", error);
+      setError(error.message || "Failed to deploy escrow contract");
+    } finally {
+      setIsDeployingContract(false);
+    }
+  };
+
+  const signBlockchainContract = async () => {
+    if (!escrow || !currentAccount || userRole !== "provider") return;
+
+    setIsSigningBlockchain(true);
+    setError(null);
+
+    try {
+      console.log(
+        `✍️ Signing blockchain contract ${escrow.escrowContractId}...`
+      );
+
+      const transaction = new Transaction();
+
+      transaction.moveCall({
+        target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::sign_agreement`,
+        arguments: [transaction.object(escrow.escrowContractId!)],
+      });
+
+      const result = await signAndExecuteTransaction({ transaction });
+      console.log("✅ Blockchain contract signed:", result.digest);
+
+      // Update backend that Party B signed on-chain
+      await fetch(
+        `${API_BASE_URL}/documents/${documentId}/party-b-blockchain-signed`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionDigest: result.digest,
+          }),
+        }
+      );
+
+      setSuccessMessage(
+        "Blockchain contract signed! Client can now fund the escrow."
+      );
+      await loadEscrowData();
+    } catch (error: any) {
+      console.error("❌ Failed to sign blockchain contract:", error);
+      setError(error.message || "Failed to sign blockchain contract");
+    } finally {
+      setIsSigningBlockchain(false);
+    }
+  };
+
   // 💰 Fund the escrow (Client only)
   const fundEscrow = async () => {
     if (!escrow || !currentAccount || userRole !== "client") return;
@@ -130,15 +321,21 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
       console.log(`💰 Funding escrow with ${escrow.agreedAmount} SUI...`);
 
       const transaction = new Transaction();
-      const amountInMist = escrow.agreedAmount * 1000000000;
+      const amountInMist = BigInt(Math.floor(escrow.agreedAmount * 1000000000));
 
-      // Create funding transaction (this is simplified - adjust based on your smart contract)
+      console.log("🔍 Funding debug:");
+      console.log("Backend escrow.agreedAmount (SUI):", escrow.agreedAmount);
+      console.log("Converting to MIST:", amountInMist.toString());
+
       transaction.moveCall({
-        target: `${process.env.NEXT_PUBLIC_ESCROW_PACKAGE_ID}::escrow_contract::fund_escrow`,
+        target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::fund_escrow`,
         arguments: [
           transaction.object(escrow.escrowContractId!),
-          transaction.splitCoins(transaction.gas, [amountInMist]),
-          transaction.object("0x6"), // Clock
+          transaction.splitCoins(transaction.gas, [Number(amountInMist)]),
+          transaction.object(
+            process.env.NEXT_PUBLIC_SUI_ESCROW_REGISTRY_OBJECT_ID!
+          ),
+          transaction.object("0x6"),
         ],
       });
 
@@ -183,7 +380,7 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
       const transaction = new Transaction();
 
       transaction.moveCall({
-        target: `${process.env.NEXT_PUBLIC_ESCROW_PACKAGE_ID}::escrow_contract::submit_work`,
+        target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::submit_work`,
         arguments: [
           transaction.object(escrow.escrowContractId!),
           transaction.object("0x6"), // Clock
@@ -242,7 +439,7 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
         const transaction = new Transaction();
 
         transaction.moveCall({
-          target: `${process.env.NEXT_PUBLIC_ESCROW_PACKAGE_ID}::escrow_contract::confirm_work`,
+          target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::confirm_work`,
           arguments: [
             transaction.object(escrow.escrowContractId!),
             transaction.object("0x6"), // Clock
@@ -304,7 +501,7 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
       const transaction = new Transaction();
 
       transaction.moveCall({
-        target: `${process.env.NEXT_PUBLIC_ESCROW_PACKAGE_ID}::escrow_contract::release_payment`,
+        target: `${process.env.NEXT_PUBLIC_SUI_ESCROW_PACKAGE_ID}::escrow_contract::confirm_payment`,
         arguments: [
           transaction.object(escrow.escrowContractId!),
           transaction.object("0x6"), // Clock
@@ -357,13 +554,13 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
     if (!escrow) return 0;
     switch (escrow.escrowStatus) {
       case "signed":
-        return 20;
+        return escrow.escrowContractId ? 50 : 25; // 25% if just signed, 50% if deployed
       case "funded":
-        return 40;
+        return 65;
       case "work_submitted":
-        return 60;
-      case "work_confirmed":
         return 80;
+      case "work_confirmed":
+        return 90;
       case "completed":
         return 100;
       default:
@@ -373,9 +570,11 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
 
   const getCurrentStep = () => {
     if (!escrow) return 1;
+    if (!escrow) return 1;
+    if (escrow.escrowStatus === "signed") {
+      return escrow.escrowContractId ? 2 : 1; // Step 2 if deployed, step 1 if just signed
+    }
     switch (escrow.escrowStatus) {
-      case "signed":
-        return 1;
       case "funded":
         return 2;
       case "work_submitted":
@@ -588,66 +787,179 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Actions */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Step 1: Fund Escrow (Client) */}
-            {escrow.escrowStatus === "signed" && userRole === "client" && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center space-x-2 mb-4">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Fund Escrow Contract
-                  </h3>
-                </div>
+            {/* Step 0.5: Deploy Escrow Contract (Client) */}
+            {/* For client -> publish escrow onchain */}
+            {escrow.escrowStatus === "signed" &&
+              !escrow.escrowContractId &&
+              userRole === "client" && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Shield className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Deploy Escrow Contract to Blockchain
+                    </h3>
+                  </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-blue-800 text-sm">
-                    💡 <strong>Ready to fund:</strong> Both parties have signed
-                    the contract. Deposit {escrow.agreedAmount} SUI into the
-                    escrow to begin the project.
-                  </p>
-                </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-blue-800 text-sm">
+                      🚀 <strong>Ready to deploy:</strong> Both parties have
+                      signed the contract. Deploy it to the Sui blockchain to
+                      enable secure escrow functionality.
+                    </p>
+                  </div>
 
-                <div className="space-y-4">
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          Escrow Amount
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          Funds will be held securely until work completion
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">
-                          {escrow.agreedAmount} SUI
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          ≈ ${(escrow.agreedAmount * 0.5).toFixed(2)} USD
-                        </p>
+                  <div className="space-y-4">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Contract Details
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">
+                            Service Provider:
+                          </span>
+                          <p className="font-mono">
+                            {formatAddress(escrow.partyB!)}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Agreed Amount:</span>
+                          <p className="font-semibold text-green-600">
+                            {escrow.agreedAmount} SUI
+                          </p>
+                        </div>
                       </div>
                     </div>
+
+                    <button
+                      onClick={deployEscrowContract}
+                      disabled={isDeployingContract}
+                      className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {isDeployingContract ? (
+                        <>
+                          <Loader className="w-5 h-5 mr-2 animate-spin" />
+                          Deploying Contract...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5 mr-2" />
+                          Deploy Escrow Contract
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-xs text-gray-500 text-center">
+                      This will create a secure escrow contract on the Sui
+                      blockchain
+                    </p>
+                  </div>
+                </div>
+              )}
+
+            {/* For partner -> sign onchain to be able to receive fund */}
+            {escrow.escrowStatus === "deployed" &&
+              escrow.escrowContractId &&
+              userRole === "provider" &&
+              !escrow.partyBSignedOnChain && ( // You'll need to track this in backend
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <PenTool className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Sign Blockchain Contract
+                    </h3>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <p className="text-blue-800 text-sm">
+                      🔗 <strong>Contract deployed!</strong> Now you need to
+                      sign the blockchain contract to confirm your participation
+                      before the client can fund the escrow.
+                    </p>
                   </div>
 
                   <button
-                    onClick={fundEscrow}
-                    disabled={isFundingEscrow}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                    onClick={signBlockchainContract}
+                    disabled={isSigningBlockchain}
+                    className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                   >
-                    {isFundingEscrow ? (
+                    {isSigningBlockchain ? (
                       <>
                         <Loader className="w-5 h-5 mr-2 animate-spin" />
-                        Funding Escrow...
+                        Signing Contract...
                       </>
                     ) : (
                       <>
-                        <DollarSign className="w-5 h-5 mr-2" />
-                        Fund Escrow ({escrow.agreedAmount} SUI)
+                        <PenTool className="w-5 h-5 mr-2" />
+                        Sign Blockchain Contract
                       </>
                     )}
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+
+            {/* Step 1: Fund Escrow (Client) */}
+            {escrow.escrowStatus === "deployed" &&
+              escrow.escrowContractId &&
+              userRole === "client" && (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Fund Escrow Contract
+                    </h3>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <p className="text-green-800 text-sm">
+                      ✅ <strong>Contract deployed!</strong> The escrow contract
+                      is now on the blockchain. Fund it with{" "}
+                      {escrow.agreedAmount} SUI to begin the project.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            Escrow Amount
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Funds will be held securely until work completion
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-green-600">
+                            {escrow.agreedAmount} SUI
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            ≈ ${(escrow.agreedAmount * 0.5).toFixed(2)} USD
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={fundEscrow}
+                      disabled={isFundingEscrow}
+                      className="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                    >
+                      {isFundingEscrow ? (
+                        <>
+                          <Loader className="w-5 h-5 mr-2 animate-spin" />
+                          Funding Escrow...
+                        </>
+                      ) : (
+                        <>
+                          <DollarSign className="w-5 h-5 mr-2" />
+                          Fund Escrow ({escrow.agreedAmount} SUI)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
 
             {/* Step 2: Submit Work (Provider) */}
             {escrow.escrowStatus === "funded" && userRole === "provider" && (

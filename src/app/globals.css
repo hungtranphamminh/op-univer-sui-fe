@@ -47,3 +47,29 @@ body {
   to {
     width: 0%;
 }}
+
+
+.hidden-thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #fff transparent; /* For Firefox */
+  /* Add right padding via padding or margin if needed */
+  padding-right: 8px;
+}
+
+/* Webkit browsers (Chrome, Edge, Safari) */
+.hidden-thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  background: transparent; /* Invisible track */
+}
+
+.hidden-thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #fff;
+  border-radius: 8px;
+  margin-right: 6px; /* Padding effect for the thumb (not supported by all browsers) */
+  border: 2px solid transparent; /* Gives space inside track */
+  background-clip: padding-box;   /* Makes thumb thinner */
+}
+
+.hidden-thin-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}

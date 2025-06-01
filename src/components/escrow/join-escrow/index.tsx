@@ -17,9 +17,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-
-// API base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { API_BASE_URL } from "@/utils/const";
 
 // Types
 interface PublicEscrowDetails {

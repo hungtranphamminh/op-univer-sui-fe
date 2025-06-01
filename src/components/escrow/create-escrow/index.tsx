@@ -28,9 +28,8 @@ import {
   useCurrentAccount,
   useSignAndExecuteTransaction,
 } from "@mysten/dapp-kit";
-import { Transaction } from "@mysten/sui/transactions";
 import { v4 as uuidv4 } from "uuid";
-import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
+import { API_BASE_URL } from "@/utils/const";
 
 interface EscrowStatus {
   documentId: string;
@@ -321,14 +320,14 @@ export default function CreateEscrowContract() {
       if (escrowType === "closed") {
         // Closed escrow
         formData.append("partyB", partyBAddress);
-        endpoint = "http://localhost:3001/documents/escrow/create";
+        endpoint = `${API_BASE_URL}/documents/escrow/create`;
       } else {
         // Open escrow
         if (category) formData.append("category", category);
         if (tags.length > 0) formData.append("tags", tags.join(","));
         if (deadline) formData.append("deadline", deadline);
         if (requirements) formData.append("requirements", requirements);
-        endpoint = "http://localhost:3001/documents/escrow/create-open";
+        endpoint = `${API_BASE_URL}/documents/escrow/create-open`;
       }
 
       // Create escrow contract
@@ -361,7 +360,7 @@ export default function CreateEscrowContract() {
       console.log(`📡 Loading escrow status for document: ${docId}`);
 
       const response = await fetch(
-        `http://localhost:3001/documents/${docId}/escrow-status`
+        `${API_BASE_URL}/documents/${docId}/escrow-status`
       );
 
       if (!response.ok) {

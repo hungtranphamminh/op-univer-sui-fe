@@ -280,11 +280,11 @@ export const NotificationBell: React.FC = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {sortedNotifications.map((notification) => {
+                {sortedNotifications.map((notification, index) => {
                   const priority = getNotificationPriority(notification);
                   return (
                     <div
-                      key={notification.id}
+                      key={index}
                       onClick={() => handleNotificationClick(notification)}
                       className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer ${
                         notification.status === "unread"

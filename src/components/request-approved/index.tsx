@@ -6,6 +6,7 @@ import {
   useCurrentAccount,
 } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
+import { API_BASE_URL } from "@/utils/const";
 
 // TODO: add ellipsis for too long of an address -> user
 
@@ -61,7 +62,7 @@ const retrieveFullDocument = async (
   try {
     // Get the PDF content
     const pdfResponse = await fetch(
-      `http://localhost:3001/documents/${documentId}/pdf`
+      `${API_BASE_URL}/documents/${documentId}/pdf`
     );
     if (!pdfResponse.ok) throw new Error("Failed to fetch document PDF");
 
@@ -76,9 +77,7 @@ const retrieveFullDocument = async (
     const pdfUrl = URL.createObjectURL(pdfBlob);
 
     // Get document info
-    const infoResponse = await fetch(
-      `http://localhost:3001/documents/${documentId}`
-    );
+    const infoResponse = await fetch(`${API_BASE_URL}/documents/${documentId}`);
     if (!infoResponse.ok) throw new Error("Failed to fetch document info");
 
     const infoResult = await infoResponse.json();
@@ -86,7 +85,7 @@ const retrieveFullDocument = async (
 
     // Get detailed status
     const statusResponse = await fetch(
-      `http://localhost:3001/documents/${documentId}/status`
+      `${API_BASE_URL}/documents/${documentId}/status`
     );
     if (!statusResponse.ok) throw new Error("Failed to fetch document status");
 
@@ -127,7 +126,7 @@ const createBlockchainTransaction = async (
 ): Promise<BlockchainTransactionData> => {
   try {
     const response = await fetch(
-      `http://localhost:3001/documents/${documentId}/create-blockchain-transaction`,
+      `${API_BASE_URL}/documents/${documentId}/create-blockchain-transaction`,
       {
         method: "POST",
         headers: {
@@ -154,7 +153,7 @@ const confirmBlockchainPublication = async (
 ) => {
   try {
     const response = await fetch(
-      `http://localhost:3001/documents/${documentId}/confirm-blockchain-publication`,
+      `${API_BASE_URL}/documents/${documentId}/confirm-blockchain-publication`,
       {
         method: "POST",
         headers: {

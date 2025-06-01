@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  X,
-  Bell,
-  Check,
-  Trash2,
-  Filter,
-  RefreshCw,
-  AlertCircle,
-} from "lucide-react";
+import { X, Bell, Check, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 import { useNotifications, Notification } from "./notification-context";
 
 // Toast Notification Component

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { PenTool } from "lucide-react";
 import {
+  PenTool,
   Upload,
   CheckCircle,
   XCircle,
@@ -32,11 +32,12 @@ import {
   WorkSubmission,
 } from "@/types/workspace";
 import { formatAddress } from "@/utils/lib/format-address";
-
-// API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/utils/const";
 
 export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
+  const router = useRouter();
+
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signAndExecuteTransaction } =
     useSignAndExecuteTransaction();
@@ -1652,7 +1653,7 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
               <div className="space-y-2">
                 <button
                   onClick={() =>
-                    window.open(`/document?documentId=${documentId}`, "_blank")
+                    router.push(`/app/contract?documentId=${documentId}`)
                   }
                   className="w-full inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >

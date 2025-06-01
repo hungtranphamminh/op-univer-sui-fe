@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation";
 import { useSignPersonalMessage, useCurrentAccount } from "@mysten/dapp-kit";
 
 import { DocumentData, SignerInfo } from "@/types/document";
+import { API_BASE_URL } from "@/utils/const";
 
 export default function PartnerDocumentSignPage() {
   const searchParams = useSearchParams();
@@ -52,9 +53,7 @@ export default function PartnerDocumentSignPage() {
   ): Promise<DocumentData> => {
     try {
       // Get the PDF content
-      const pdfResponse = await fetch(
-        `http://localhost:3001/documents/${docId}/pdf`
-      );
+      const pdfResponse = await fetch(`${API_BASE_URL}/documents/${docId}/pdf`);
       if (!pdfResponse.ok) throw new Error("Failed to fetch document PDF");
 
       const pdfResult = await pdfResponse.json();
@@ -68,9 +67,7 @@ export default function PartnerDocumentSignPage() {
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
       // Get document info
-      const infoResponse = await fetch(
-        `http://localhost:3001/documents/${docId}`
-      );
+      const infoResponse = await fetch(`${API_BASE_URL}/documents/${docId}`);
       if (!infoResponse.ok) throw new Error("Failed to fetch document info");
 
       const infoResult = await infoResponse.json();
@@ -78,7 +75,7 @@ export default function PartnerDocumentSignPage() {
 
       // Get detailed status
       const statusResponse = await fetch(
-        `http://localhost:3001/documents/${docId}/status`
+        `${API_BASE_URL}/documents/${docId}/status`
       );
       if (!statusResponse.ok)
         throw new Error("Failed to fetch document status");
@@ -120,13 +117,10 @@ export default function PartnerDocumentSignPage() {
       formData.append("signature", signature);
       formData.append("signatureImage", signatureImageFile);
 
-      const response = await fetch(
-        `http://localhost:3001/documents/${docId}/sign`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/documents/${docId}/sign`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorResult = await response.json();

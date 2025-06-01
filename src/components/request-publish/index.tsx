@@ -9,6 +9,7 @@ import OwnSignature from "./own-signature";
 import OtherSigners from "./other-signers";
 import Sidebar from "./side-bar";
 import Overlay from "./overlay";
+import { API_BASE_URL } from "@/utils/const";
 
 interface Signer {
   id: string;
@@ -402,7 +403,7 @@ const PublishRequestPage: React.FC = () => {
 
       // Make the API call
       console.log("🌐 Making API request...");
-      const response = await fetch("http://localhost:3001/documents/upload", {
+      const response = await fetch(`${API_BASE_URL}/documents/upload`, {
         method: "POST",
         body: formData,
         // Don't set Content-Type header - let browser set it with boundary for FormData

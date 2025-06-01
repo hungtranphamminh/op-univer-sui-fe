@@ -34,11 +34,7 @@ import {
 import StatGird from "./stat-grid";
 import { formatAddress } from "@/utils/lib/format-address";
 import EscrowManagementHeader from "./header";
-
-// API base URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
-// Types
+import { API_BASE_URL } from "@/utils/const";
 
 // API helper functions
 const apiCall = async (endpoint: string, options?: RequestInit) => {

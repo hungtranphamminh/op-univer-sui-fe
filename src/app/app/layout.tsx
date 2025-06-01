@@ -18,7 +18,7 @@ export default function RootLayout({
       <MinorLayerProvider>
         <div className="w-full flex items-start h-screen overflow-y-hidden">
           <LeftSidebar />
-          <div className="w-full h-screen overflow-y-auto py-10">
+          <div className="w-full h-screen overflow-y-auto py-10 hidden-thin-scrollbar">
             {children}
           </div>
           <RightSideBar />

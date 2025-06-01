@@ -1,11 +1,12 @@
 "use client";
 
 import JoinEscrow from "@/components/escrow/join-escrow";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function JoinOpenEscrowPage() {
-  const searchParams = useSearchParams();
-  const shareToken = searchParams.get("shareToken") ?? "";
-
-  return <JoinEscrow shareToken={shareToken} />;
+  return (
+    <Suspense>
+      <JoinEscrow />;
+    </Suspense>
+  );
 }

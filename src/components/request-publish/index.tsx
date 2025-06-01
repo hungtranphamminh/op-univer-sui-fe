@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import React, { useState, useCallback, useRef } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { v4 as uuidv4 } from "uuid";
@@ -298,6 +300,7 @@ const PublishRequestPage: React.FC = () => {
       setSignatureImage(file);
       setError(null);
     } catch (err) {
+      console.log(err);
       setError("Failed to load signature image.");
     }
   };

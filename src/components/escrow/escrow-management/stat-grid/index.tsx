@@ -4,7 +4,6 @@ import {
   DollarSign,
   FileText,
   Globe,
-  Users,
 } from "lucide-react";
 
 import { DashboardStats } from "@/types/escrow-contract";

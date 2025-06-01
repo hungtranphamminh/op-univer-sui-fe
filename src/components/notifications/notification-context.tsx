@@ -1,5 +1,6 @@
 "use client";
-
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+/* eslint-disable  @typescript-eslint/no-unsafe-function-type */
 import React, {
   createContext,
   useContext,

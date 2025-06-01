@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect } from "react";
 import {
   PenTool,
@@ -1416,7 +1418,8 @@ export default function EscrowWorkspace({ documentId }: EscrowWorkspaceProps) {
                   </h3>
                   <p className="text-gray-600">
                     The service provider is currently working on your project.
-                    You'll be notified when they submit their completed work.
+                    You&apos;ll be notified when they submit their completed
+                    work.
                   </p>
                   {escrow.deadline && (
                     <p className="text-sm text-gray-500 mt-2">

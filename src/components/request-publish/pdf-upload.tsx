@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import { useCallback } from "react";
 import { Upload, FileText, Eye, AlertCircle, X } from "lucide-react";
 import { formatFileSize } from "@/utils/lib/format-file";
@@ -40,15 +42,21 @@ export default function PdfUpload({
     [handleFileSelect]
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(true);
+    },
+    [setIsDragOver]
+  );
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragOver(false);
+    },
+    [setIsDragOver]
+  );
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

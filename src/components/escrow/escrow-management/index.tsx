@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from "react";
 import {
@@ -11,8 +12,6 @@ import {
   DollarSign,
   CheckCircle,
   XCircle,
-  Globe,
-  Lock,
   ExternalLink,
   MoreVertical,
   User,
@@ -298,34 +297,6 @@ export default function EscrowDashboard() {
     } catch (error: any) {
       console.error("❌ Failed to reject join request:", error);
       setError(error.message || "Failed to reject join request");
-    }
-  };
-
-  // Real API call to archive contract
-  const archiveContract = async (documentId: string) => {
-    if (!currentAccount) return;
-
-    try {
-      console.log(`🗂️ Archiving contract ${documentId}...`);
-
-      await apiCall(
-        `/documents/${documentId}?userAddress=${currentAccount.address}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      // Remove from local state
-      setContracts((prev) => prev.filter((c) => c.documentId !== documentId));
-      setSuccessMessage("Contract archived successfully.");
-
-      // Reload stats
-      loadStats();
-
-      console.log("✅ Contract archived successfully");
-    } catch (error: any) {
-      console.error("❌ Failed to archive contract:", error);
-      setError(error.message || "Failed to archive contract");
     }
   };
 
@@ -882,7 +853,7 @@ export default function EscrowDashboard() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Join Requests for "{selectedContract.title}"
+                  Join Requests for &apos;{selectedContract.title}&apos;
                 </h2>
                 <button
                   onClick={() => setShowJoinRequests(false)}

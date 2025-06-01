@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import React, { useState, useRef, useEffect } from "react";
 import {
   Bell,
@@ -275,7 +277,7 @@ export const NotificationBell: React.FC = () => {
                 <Bell className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p className="font-medium">No notifications yet</p>
                 <p className="text-sm mt-1">
-                  You'll see updates about your documents here
+                  You&apos;ll see updates about your documents here
                 </p>
               </div>
             ) : (

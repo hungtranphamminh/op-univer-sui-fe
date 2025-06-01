@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import React, { useState, useEffect, useCallback } from "react";
 import { X, Bell, Check, Trash2, RefreshCw, AlertCircle } from "lucide-react";
 import { useNotifications, Notification } from "./notification-context";
@@ -220,7 +222,7 @@ export const NotificationPage: React.FC = () => {
     setSelectedNotifications(new Set());
   };
 
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = () => {
     // Reuse the same icon logic from NotificationBell
     return <Bell className="w-5 h-5 text-gray-500" />;
   };
@@ -399,7 +401,7 @@ export const NotificationPage: React.FC = () => {
 
                     {/* Icon */}
                     <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.type)}
+                      {getNotificationIcon()}
                     </div>
 
                     {/* Content */}

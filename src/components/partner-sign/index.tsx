@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -220,6 +221,8 @@ export default function PartnerDocumentSignPage() {
       setSignatureImage(file);
       setError(null);
     } catch (err) {
+      console.log(err);
+
       setError("Failed to load signature image.");
     }
   };

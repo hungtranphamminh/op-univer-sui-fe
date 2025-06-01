@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
@@ -13,21 +14,13 @@ import {
   DollarSign,
   Shield,
   CheckCircle,
-  ExternalLink,
   Info,
   AlertTriangle,
-  Users,
-  UserPlus,
-  Share2,
   Copy,
   Globe,
   Lock,
 } from "lucide-react";
-import {
-  useSignPersonalMessage,
-  useCurrentAccount,
-  useSignAndExecuteTransaction,
-} from "@mysten/dapp-kit";
+import { useSignPersonalMessage, useCurrentAccount } from "@mysten/dapp-kit";
 import { v4 as uuidv4 } from "uuid";
 import { API_BASE_URL } from "@/utils/const";
 
@@ -77,6 +70,7 @@ export default function CreateEscrowContract() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  console.log(isLoading);
 
   // Escrow contract state
   const [documentId, setDocumentId] = useState<string | null>(null);
@@ -113,8 +107,6 @@ export default function CreateEscrowContract() {
   // Wallet integration
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
-  const { mutateAsync: signAndExecuteTransaction } =
-    useSignAndExecuteTransaction();
 
   const maxFileSize = 10; // MB
 
@@ -156,6 +148,7 @@ export default function CreateEscrowContract() {
 
         setIsLoading(false);
       } catch (err) {
+        console.log(err);
         setError("Failed to load PDF file.");
         setIsLoading(false);
       }
@@ -269,6 +262,8 @@ export default function CreateEscrowContract() {
       setError(null);
       setCurrentStep(4);
     } catch (err) {
+      console.log(err);
+
       setError("Failed to load signature image.");
     }
   };
@@ -410,15 +405,6 @@ export default function CreateEscrowContract() {
     escrowType,
     generateSignatureMessage,
   ]);
-
-  const canCreateContract =
-    selectedFile &&
-    documentTitle.trim() &&
-    agreedAmount > 0 &&
-    signedMessage &&
-    signatureImage &&
-    (escrowType === "open" ||
-      (escrowType === "closed" && partyBAddress.trim()));
 
   const steps = [
     {
@@ -1037,8 +1023,8 @@ export default function CreateEscrowContract() {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                          Help potential partners understand what you're looking
-                          for
+                          Help potential partners understand what you&apos;re
+                          looking for
                         </p>
                       </div>
                     </div>
@@ -1309,7 +1295,6 @@ export default function CreateEscrowContract() {
               <div className="mt-6">
                 <button
                   onClick={handleCreateEscrowContract}
-                  // disabled={!canCreateContract || isCreatingEscrow}
                   className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCreatingEscrow ? (

@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import React, { useState, useEffect } from "react";
 import {
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { API_BASE_URL } from "@/utils/const";
+import { useSearchParams } from "next/navigation";
 
 // Types
 interface PublicEscrowDetails {
@@ -68,11 +70,9 @@ const apiCall = async (endpoint: string, options?: RequestInit) => {
   }
 };
 
-interface JoinEscrowPageProps {
-  shareToken: string; // This would come from the URL params
-}
-
-export default function JoinEscrow({ shareToken }: JoinEscrowPageProps) {
+export default function JoinEscrow() {
+  const searchParams = useSearchParams();
+  const shareToken = searchParams.get("shareToken") ?? "";
   const currentAccount = useCurrentAccount();
 
   // State
@@ -243,8 +243,9 @@ export default function JoinEscrow({ shareToken }: JoinEscrowPageProps) {
             Join Request Submitted!
           </h2>
           <p className="text-gray-600 mb-6">
-            Your request to join "{escrowDetails?.title}" has been sent to the
-            client. They will review your request and get back to you soon.
+            Your request to join &apos;{escrowDetails?.title}&apos; has been
+            sent to the client. They will review your request and get back to
+            you soon.
           </p>
           <div className="space-y-3">
             <button
@@ -513,7 +514,7 @@ export default function JoinEscrow({ shareToken }: JoinEscrowPageProps) {
                     Connect your Sui wallet to apply for this escrow contract
                   </p>
                   <p className="text-xs text-gray-500">
-                    You'll need a wallet to receive payments and sign the
+                    You&apos;ll need a wallet to receive payments and sign the
                     contract
                   </p>
                 </div>
@@ -609,7 +610,7 @@ export default function JoinEscrow({ shareToken }: JoinEscrowPageProps) {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Why You're Perfect for This Job *
+                        Why You&apos;re Perfect for This Job *
                       </label>
                       <textarea
                         value={joinForm.message}

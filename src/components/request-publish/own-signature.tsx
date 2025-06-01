@@ -1,3 +1,5 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+
 import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { PenTool, Check, Image, X } from "lucide-react";
 

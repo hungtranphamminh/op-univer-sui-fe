@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable  @typescript-eslint/no-explicit-any */
 
 import { API_BASE_URL } from "@/utils/const";
 import { formatAddress } from "@/utils/lib/format-address";
@@ -96,7 +97,7 @@ const apiCall = async (endpoint: string, options: RequestInit = {}) => {
   return data;
 };
 
-export default function ContractDetailsPage() {
+export default function ContractDetails() {
   // Get documentId from URL params
   const searchParams = useSearchParams();
   const documentId = searchParams.get("documentId") || searchParams.get("id");

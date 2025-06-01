@@ -1,3 +1,6 @@
+/* eslint-disable  @typescript-eslint/no-explicit-any */
+"use client";
+
 import React, { useState, useRef, useEffect } from "react";
 import {
   PenTool,
@@ -23,16 +26,13 @@ import {
 } from "lucide-react";
 import { useCurrentAccount, useSignPersonalMessage } from "@mysten/dapp-kit";
 import { API_BASE_URL } from "@/utils/const";
+import { useSearchParams } from "next/navigation";
 
 // API Configuration
 
-interface EscrowPartnerSigningProps {
-  documentId: string;
-}
-
-export default function EscrowPartnerSigning({
-  documentId,
-}: EscrowPartnerSigningProps) {
+export default function EscrowPartnerSigning() {
+  const searchParams = useSearchParams();
+  const documentId = searchParams.get("documentId") ?? "";
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signPersonalMessage } = useSignPersonalMessage();
 
@@ -40,7 +40,6 @@ export default function EscrowPartnerSigning({
   const [escrowData, setEscrowData] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -188,6 +187,7 @@ export default function EscrowPartnerSigning({
       setCurrentStep(3);
       setSuccessMessage("Signature image uploaded successfully!");
     } catch (err) {
+      console.log(err);
       setError("Failed to load signature image.");
     }
   };
@@ -285,8 +285,8 @@ export default function EscrowPartnerSigning({
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              Make sure you're connecting the wallet address that was specified
-              in the original contract.
+              Make sure you&apos;re connecting the wallet address that was
+              specified in the original contract.
             </p>
           </div>
         </div>
@@ -655,8 +655,8 @@ export default function EscrowPartnerSigning({
 
                     <div className="text-center">
                       <p className="text-xs text-gray-500">
-                        Don't have a digital signature? You can create one using
-                        online signature tools or take a photo of your
+                        Don&apos;t have a digital signature? You can create one
+                        using online signature tools or take a photo of your
                         handwritten signature on white paper.
                       </p>
                     </div>
@@ -773,7 +773,7 @@ export default function EscrowPartnerSigning({
 
                     <p className="text-xs text-gray-500 text-center">
                       This will add your signature to the contract and notify
-                      the client that you've signed
+                      the client that you&apos;ve signed
                     </p>
                   </div>
                 ) : (
@@ -792,7 +792,7 @@ export default function EscrowPartnerSigning({
                       <div className="space-y-3">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="text-sm font-medium text-blue-900 mb-2">
-                            What's Next?
+                            What&apos;s Next?
                           </h4>
                           <div className="text-sm text-blue-800 space-y-2">
                             <p>

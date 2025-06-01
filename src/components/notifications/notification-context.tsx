@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { io, Socket } from "socket.io-client";
+import { API_BASE_URL } from "@/utils/const";
 
 // Types
 export interface Notification {
@@ -70,8 +71,7 @@ class NotificationWebSocketService {
           this.socket.disconnect();
         }
 
-        const backendUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+        const backendUrl = API_BASE_URL;
 
         this.socket = io(`${backendUrl}/notifications`, {
           transports: ["websocket", "polling"],
@@ -260,8 +260,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setError(null);
 
     try {
-      const backendUrl =
-        process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+      const backendUrl = API_BASE_URL;
       const response = await fetch(
         `${backendUrl}/notifications/${currentAccount.address}?limit=50`
       );
@@ -460,8 +459,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           wsService.current.markAsRead(notificationId);
         } else {
           // Fallback to REST API
-          const backendUrl =
-            process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+          const backendUrl = API_BASE_URL;
           const response = await fetch(
             `${backendUrl}/notifications/${notificationId}/read`,
             {
@@ -513,8 +511,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         wsService.current.markAllAsRead();
       } else {
         // Fallback to REST API
-        const backendUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+        const backendUrl = API_BASE_URL;
         const response = await fetch(
           `${backendUrl}/notifications/${currentAccount.address}/read-all`,
           {
@@ -551,8 +548,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
-        const backendUrl =
-          process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+        const backendUrl = API_BASE_URL;
         const response = await fetch(
           `${backendUrl}/notifications/${notificationId}`,
           {
